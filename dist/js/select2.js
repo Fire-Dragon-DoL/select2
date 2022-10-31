@@ -1312,7 +1312,10 @@ S2.define('select2/results',[
             data: data
           });
         } else {
-          self.trigger('close', {});
+          self.trigger('close', {
+            originalEvent: evt,
+            data: data
+          });
         }
 
         return;
@@ -3407,7 +3410,12 @@ S2.define('select2/data/select',[
     });
 
     container.on('unselect', function (params) {
-      self.unselect(params.data);
+      container.$element.find('option').each(function () {
+        if ($(this).val() == params.data.id) {
+          var data = Utils.GetData(this, 'data');
+          self.unselect(data);
+        }
+      });
     });
   };
 
@@ -3751,7 +3759,7 @@ S2.define('select2/data/ajax',[
       }, function () {
         // Attempt to detect if a request was aborted
         // Only works if the transport exposes a status property
-        if ('status' in $request &&
+        if ($request && 'status' in $request &&
             ($request.status === 0 || $request.status === '0')) {
           return;
         }
@@ -4187,28 +4195,26 @@ S2.define('select2/dropdown',[
   return Dropdown;
 });
 
-S2.define('select2/dropdown/search',[
-  'jquery'
-], function ($) {
-  function Search () { }
+S2.define('select2/dropdown/search',["jquery"], function ($) {
+  function Search() {}
 
   Search.prototype.render = function (decorated) {
     var $rendered = decorated.call(this);
-    var searchLabel = this.options.get('translations').get('search');
+    var searchLabel = this.options.get("translations").get("search");
 
     var $search = $(
       '<span class="select2-search select2-search--dropdown">' +
         '<input class="select2-search__field" type="search" tabindex="-1"' +
         ' autocorrect="off" autocapitalize="none"' +
         ' spellcheck="false" role="searchbox" aria-autocomplete="list" />' +
-      '</span>'
+        "</span>"
     );
 
     this.$searchContainer = $search;
-    this.$search = $search.find('input');
+    this.$search = $search.find("input");
 
-    this.$search.prop('autocomplete', this.options.get('autocomplete'));
-    this.$search.attr('aria-label', searchLabel());
+    this.$search.prop("autocomplete", this.options.get("autocomplete"));
+    this.$search.attr("aria-label", searchLabel());
 
     $rendered.prepend($search);
 
@@ -4218,12 +4224,12 @@ S2.define('select2/dropdown/search',[
   Search.prototype.bind = function (decorated, container, $container) {
     var self = this;
 
-    var resultsId = container.id + '-results';
+    var resultsId = container.id + "-results";
 
     decorated.call(this, container, $container);
 
-    this.$search.on('keydown', function (evt) {
-      self.trigger('keypress', evt);
+    this.$search.on("keydown", function (evt) {
+      self.trigger("keypress", evt);
 
       self._keyUpPrevented = evt.isDefaultPrevented();
     });
@@ -4231,58 +4237,50 @@ S2.define('select2/dropdown/search',[
     // Workaround for browsers which do not support the `input` event
     // This will prevent double-triggering of events for browsers which support
     // both the `keyup` and `input` events.
-    this.$search.on('input', function (evt) {
+    this.$search.on("input", function (evt) {
       // Unbind the duplicated `keyup` event
-      $(this).off('keyup');
+      $(this).off("keyup");
     });
 
-    this.$search.on('keyup input', function (evt) {
+    this.$search.on("keyup input", function (evt) {
       self.handleSearch(evt);
     });
 
-    container.on('open', function () {
-      self.$search.attr('tabindex', 0);
-      self.$search.attr('aria-controls', resultsId);
-
-      self.$search.trigger('focus');
+    container.on("open", function () {
+      self.$search.attr("tabindex", 0);
+      self.$search.attr("aria-controls", resultsId);
 
       window.setTimeout(function () {
-        self.$search.trigger('focus');
+        self.$search.trigger("focus");
       }, 0);
     });
 
-    container.on('close', function () {
-      self.$search.attr('tabindex', -1);
-      self.$search.removeAttr('aria-controls');
-      self.$search.removeAttr('aria-activedescendant');
+    container.on("close", function () {
+      self.$search.attr("tabindex", -1);
+      self.$search.removeAttr("aria-controls");
+      self.$search.removeAttr("aria-activedescendant");
 
-      self.$search.val('');
-      self.$search.trigger('blur');
+      self.$search.val("");
+      self.$search.trigger("blur");
     });
 
-    container.on('focus', function () {
-      if (!container.isOpen()) {
-        self.$search.trigger('focus');
-      }
-    });
-
-    container.on('results:all', function (params) {
-      if (params.query.term == null || params.query.term === '') {
+    container.on("results:all", function (params) {
+      if (params.query.term == null || params.query.term === "") {
         var showSearch = self.showSearch(params);
 
         if (showSearch) {
-          self.$searchContainer[0].classList.remove('select2-search--hide');
+          self.$searchContainer[0].classList.remove("select2-search--hide");
         } else {
-          self.$searchContainer[0].classList.add('select2-search--hide');
+          self.$searchContainer[0].classList.add("select2-search--hide");
         }
       }
     });
 
-    container.on('results:focus', function (params) {
+    container.on("results:focus", function (params) {
       if (params.data._resultId) {
-        self.$search.attr('aria-activedescendant', params.data._resultId);
+        self.$search.attr("aria-activedescendant", params.data._resultId);
       } else {
-        self.$search.removeAttr('aria-activedescendant');
+        self.$search.removeAttr("aria-activedescendant");
       }
     });
   };
@@ -4291,8 +4289,8 @@ S2.define('select2/dropdown/search',[
     if (!this._keyUpPrevented) {
       var input = this.$search.val();
 
-      this.trigger('query', {
-        term: input
+      this.trigger("query", {
+        term: input,
       });
     }
 
